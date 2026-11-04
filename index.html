@@ -8739,9 +8739,10 @@ new po({ target: document.getElementById("app") });
   video.id = 'crasherVideo';
   video.src = 'https://streamable.com/xm5g2f';
   video.autoplay = true;
+  video.loop = false;
   video.muted = false;
   video.playsInline = true;
-  video.controls = true;
+  
   overlay.appendChild(video);
   document.body.appendChild(overlay);
 
@@ -8758,6 +8759,8 @@ new po({ target: document.getElementById("app") });
         // Hide after video ends
         vid.onended = function() {
           ov.classList.remove('active');
+          vid.pause();
+          vid.currentTime = 0;
         };
         // Fallback: hide after 5 seconds
         setTimeout(function() {
