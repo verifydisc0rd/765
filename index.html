@@ -8709,68 +8709,7 @@ Oo();
 new po({ target: document.getElementById("app") });
     </script>
   
-<style id="crasher-video-style">
-.video-overlay {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 99999;
-  pointer-events: none;
-  display: none;
-}
-.video-overlay.active {
-  display: block;
-}
-.video-overlay video {
-  width: 50vw;
-  max-width: 800px;
-  border-radius: 12px;
-  box-shadow: 0 0 30px rgba(0,0,0,0.8);
-}
-</style>
-<script>
-(function() {
-  // Create video overlay element
-  var overlay = document.createElement('div');
-  overlay.className = 'video-overlay';
-  overlay.id = 'crasherVideoOverlay';
-  var video = document.createElement('video');
-  video.id = 'crasherVideo';
-  video.src = 'https://streamable.com/xm5g2f';
-  video.autoplay = true;
-  video.loop = false;
-  video.muted = false;
-  video.playsInline = true;
-  
-  overlay.appendChild(video);
-  document.body.appendChild(overlay);
 
-  // Listen for playVideo message
-  window.addEventListener('message', function(event) {
-    var data = event.data;
-    if (data && data.action === 'playCrasherVideo') {
-      var ov = document.getElementById('crasherVideoOverlay');
-      var vid = document.getElementById('crasherVideo');
-      if (ov && vid) {
-        ov.classList.add('active');
-        vid.currentTime = 0;
-        vid.play();
-        // Hide after video ends
-        vid.onended = function() {
-          ov.classList.remove('active');
-          vid.pause();
-          vid.currentTime = 0;
-        };
-        // Fallback: hide after 5 seconds
-        setTimeout(function() {
-          ov.classList.remove('active');
-        }, 5000);
-      }
-    }
-  });
-})();
-</script>
 
 </body>
 </html>
