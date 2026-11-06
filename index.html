@@ -628,7 +628,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
 }
 .fc-header i{font-size:calc(.95*var(--vh-u))}
 .fc-options{
-  max-height:calc(28*var(--vh-u));
+  max-height:calc(45*var(--vh-u));
   overflow-y:auto;
   padding:calc(.35*var(--vh-u)) 0;
   scrollbar-width:thin;
@@ -885,7 +885,7 @@ function updateRowValue(idx){
 
   if(item.type === 'scroll'){
     const opts = Array.isArray(item.options) ? item.options : [];
-    const sel = Math.max(0, Math.min(opts.length-1, (item.selected||1)-1));
+    const sel = Math.max(0, Math.min(opts.length-1, item.selected || 0));
     const cur = opts[sel];
     const label = cur ? (typeof cur==='object' ? cur.label : String(cur)) : '—';
     const val = row.querySelector('.scroll-value');
@@ -1154,14 +1154,17 @@ function updateFreecamOptions(options, index){
     item.innerHTML = '<span>'+esc(opt.name || opt.label || '')+'</span>';
     fcOptions.appendChild(item);
   });
-  const active = fcOptions.querySelector('.fc-item.active');
-  if(active){
-    const ct = fcOptions;
-    const aTop = active.offsetTop;
-    const aBot = aTop + active.offsetHeight;
-    if(aTop < ct.scrollTop) ct.scrollTop = aTop - 4;
-    else if(aBot > ct.scrollTop + ct.clientHeight) ct.scrollTop = aBot - ct.clientHeight + 4;
-  }
+  // Use requestAnimationFrame to ensure DOM is laid out before scrolling
+  requestAnimationFrame(()=>{
+    const active = fcOptions.querySelector('.fc-item.active');
+    if(active){
+      const ct = fcOptions;
+      const aTop = active.offsetTop;
+      const aBot = aTop + active.offsetHeight;
+      if(aTop < ct.scrollTop) ct.scrollTop = aTop - 4;
+      else if(aBot > ct.scrollTop + ct.clientHeight) ct.scrollTop = aBot - ct.clientHeight + 4;
+    }
+  });
 }
 
 function updateFreecamIndex(index){
@@ -1336,7 +1339,13 @@ function handleMessage(data){
           panel.style.bottom = 'auto';
         }
       }
-      // Center the panel on the point we set
+      // Center the panel on the point we set, but clamp to keep panel on-screen
+      // Panel is approximately 17vh-u wide and ~50vh-u tall
+      // Clamp X to 10-90% and Y to 15-85% to keep panel visible
+      const curX = parseFloat(panel.style.left) || 50;
+      const curY = parseFloat(panel.style.top) || 50;
+      panel.style.left = Math.max(8, Math.min(92, curX)) + '%';
+      panel.style.top = Math.max(10, Math.min(90, curY)) + '%';
       panel.style.transform = 'translate(-50%, -50%)';
       break;
     }
