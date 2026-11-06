@@ -569,7 +569,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
 .coord-value{color:#fff;font-weight:600;font-variant-numeric:tabular-nums;min-width:calc(3.5*var(--vh-u));text-align:right}
 .coord-sep{color:var(--text-dim);opacity:.5}
 
-/* ===== FREECAM (Bottom Center) ===== */
+/* ===== FREECAM (Right Side) ===== */
 .freecam-overlay{
   position:fixed;inset:0;pointer-events:none;
   z-index:8000;display:none;
@@ -597,11 +597,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
 }
 
 .freecam-panel{
-  position:absolute;
-  bottom:calc(6*var(--vh-u));  /* المسافة من الأسفل */
-  left:50%;
-  transform:translateX(-50%);
-  width:calc(22*var(--vh-u));  /* أعرض شوي عشان يكون بالوسط */
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%, -50%);
+  width:calc(17*var(--vh-u));
   background:var(--bg-panel);
   border:1px solid var(--border-subtle);
   border-radius:var(--radius-md);
@@ -615,12 +613,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
   animation:fcIn .3s cubic-bezier(.22,1,.36,1);
 }
 @keyframes fcIn{
-  from{opacity:0;transform:translateX(-50%) translateY(20px)}
-  to{opacity:1;transform:translateX(-50%) translateY(0)}
+  from{opacity:0;transform:translateY(-50%) translateX(20px)}
+  to{opacity:1;transform:translateY(-50%) translateX(0)}
 }
 .fc-header{
-  display:flex;align-items:center;justify-content:center;
-  gap:calc(.45*var(--vh-u));
+  display:flex;align-items:center;gap:calc(.45*var(--vh-u));
   padding:calc(.55*var(--vh-u)) calc(.75*var(--vh-u));
   background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
   border-bottom:1px solid var(--border-subtle);
@@ -631,14 +628,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
 }
 .fc-header i{font-size:calc(.95*var(--vh-u))}
 .fc-options{
-  display:flex;
-  flex-direction:row;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:calc(.4*var(--vh-u));
-  max-height:calc(20*var(--vh-u));
+  max-height:calc(28*var(--vh-u));
   overflow-y:auto;
-  padding:calc(.7*var(--vh-u)) calc(.75*var(--vh-u));
+  padding:calc(.35*var(--vh-u)) 0;
   scrollbar-width:thin;
   scrollbar-color:var(--accent) transparent;
 }
@@ -646,28 +638,33 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
 .fc-options::-webkit-scrollbar-track{background:transparent}
 .fc-options::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
 .fc-item{
-  display:flex;align-items:center;justify-content:center;
-  padding:calc(.45*var(--vh-u)) calc(.75*var(--vh-u));
-  font-size:calc(.85*var(--vh-u));
-  font-weight:600;
+  display:flex;align-items:center;gap:calc(.5*var(--vh-u));
+  padding:calc(.4*var(--vh-u)) calc(.75*var(--vh-u));
+  font-size:calc(.88*var(--vh-u));
+  font-weight:500;
   color:var(--text-dim);
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:var(--radius-sm);
   cursor:default;
-  transition:all .2s ease;
-  text-align:center;
-  min-width:calc(5*var(--vh-u));
+  transition:color .15s ease, background .15s ease;
+  position:relative;
 }
 .fc-item.active{
-  color:#fff;
-  background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #fff));
-  border-color:rgba(255,255,255,.2);
-  box-shadow:0 0 15px var(--accent-glow);
-  transform:scale(1.02);
+  color:var(--text);
+  font-weight:600;
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--accent) 18%, transparent) 0%,
+    transparent 100%);
+  border-left:2px solid var(--accent);
+  padding-left:calc(.75*var(--vh-u) - 2px);
+}
+.fc-item.active::before{
+  content:'▸';
+  position:absolute;left:calc(.15*var(--vh-u));
+  color:var(--accent);
+  font-size:calc(.7*var(--vh-u));
 }
 .fc-item span{
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  flex:1;
 }
 .fc-hint{
   padding:calc(.45*var(--vh-u)) calc(.75*var(--vh-u));
@@ -801,6 +798,10 @@ function applyAccent(color){
   }
 }
 
+/* 
+  بناء القائمة من الصفر
+  (يستخدم فقط عند تغيير القائمة بالكامل: فتح/إغلاق ساب منيو)
+*/
 function buildMenu(){
   if(!Array.isArray(currentMenu)) currentMenu = [];
   menuItems.innerHTML = '';
@@ -874,6 +875,9 @@ function buildMenu(){
   });
 }
 
+/*
+  تحديث قيم صف واحد فقط (بدون لمس الـ DOM)
+*/
 function updateRowValue(idx){
   const item = currentMenu[idx];
   const row = rowElements[idx];
@@ -885,7 +889,7 @@ function updateRowValue(idx){
     const cur = opts[sel];
     const label = cur ? (typeof cur==='object' ? cur.label : String(cur)) : '—';
     const val = row.querySelector('.scroll-value');
-    if(val) val.textContent = label;
+    if(val && val.textContent !== label) val.textContent = label;
   }
   else if(item.type === 'slider'){
     const min = item.min ?? 0, max = item.max ?? 100, val = item.value ?? min;
@@ -893,13 +897,57 @@ function updateRowValue(idx){
     const valEl = row.querySelector('.slider-value');
     const fill = row.querySelector('.slider-fill');
     const thumb = row.querySelector('.slider-thumb');
-    if(valEl) valEl.textContent = val;
-    if(fill) fill.style.width = pct + '%';
-    if(thumb) thumb.style.left = pct + '%';
+    
+    if(valEl && valEl.textContent !== String(val)) valEl.textContent = val;
+    if(fill && fill.style.width !== pct+'%') fill.style.width = pct + '%';
+    if(thumb && thumb.style.left !== pct+'%') thumb.style.left = pct + '%';
   }
   else if(item.type === 'checkbox'){
     const tg = row.querySelector('.toggle');
-    if(tg) tg.classList.toggle('active', !!item.checked);
+    if(tg && tg.classList.contains('active') !== !!item.checked){
+      tg.classList.toggle('active', !!item.checked);
+    }
+  }
+}
+
+/*
+  إصلاح مشكلة التعليق:
+  فحص ذكي للقائمة — إذا الهيكل نفسه ما تغير، نحدث القيم بس!
+*/
+function processNewMenu(newMenu, newIndex){
+  // إذا القائمة فاضية أو اختلف عدد العناصر أو أنواعها
+  if(!Array.isArray(newMenu) || currentMenu.length !== newMenu.length){
+    currentMenu = newMenu;
+    currentIndex = newIndex;
+    buildMenu();
+    requestAnimationFrame(()=>selectIndex(currentIndex, true));
+    return;
+  }
+
+  // نتحقق هل التغيير مجرد قيمة أم قائمة جديدة كلياً
+  let isSameStructure = true;
+  for(let i=0; i<newMenu.length; i++){
+    if(newMenu[i].type !== currentMenu[i].type || newMenu[i].label !== currentMenu[i].label){
+      isSameStructure = false;
+      break;
+    }
+  }
+
+  if(isSameStructure){
+    // نفس الهيكل -> نحدث القيم فقط
+    currentMenu = newMenu;
+    for(let i=0; i<currentMenu.length; i++){
+      updateRowValue(i);
+    }
+    if(typeof newIndex === 'number'){
+      selectIndex(newIndex, false);
+    }
+  } else {
+    // هيكل جديد -> نعيد البناء
+    currentMenu = newMenu;
+    currentIndex = newIndex;
+    buildMenu();
+    requestAnimationFrame(()=>selectIndex(currentIndex, true));
   }
 }
 
@@ -1106,6 +1154,14 @@ function updateFreecamOptions(options, index){
     item.innerHTML = '<span>'+esc(opt.name || opt.label || '')+'</span>';
     fcOptions.appendChild(item);
   });
+  const active = fcOptions.querySelector('.fc-item.active');
+  if(active){
+    const ct = fcOptions;
+    const aTop = active.offsetTop;
+    const aBot = aTop + active.offsetHeight;
+    if(aTop < ct.scrollTop) ct.scrollTop = aTop - 4;
+    else if(aBot > ct.scrollTop + ct.clientHeight) ct.scrollTop = aBot - ct.clientHeight + 4;
+  }
 }
 
 function updateFreecamIndex(index){
@@ -1113,6 +1169,14 @@ function updateFreecamIndex(index){
   items.forEach((it, i)=>{
     it.classList.toggle('active', (i+1) === index);
   });
+  const active = fcOptions.querySelector('.fc-item.active');
+  if(active){
+    const ct = fcOptions;
+    const aTop = active.offsetTop;
+    const aBot = aTop + active.offsetHeight;
+    if(aTop < ct.scrollTop) ct.scrollTop = aTop - 4;
+    else if(aBot > ct.scrollTop + ct.clientHeight) ct.scrollTop = aBot - ct.clientHeight + 4;
+  }
 }
 
 function setFreecamHint(text){
@@ -1135,10 +1199,8 @@ function handleMessage(data){
       const newIndex = data.current || 1;
       
       if(Array.isArray(data.menu)){
-        currentMenu = data.menu;
-        currentIndex = newIndex;
-        buildMenu();
-        requestAnimationFrame(()=>selectIndex(currentIndex, true));
+        // استخدمنا الدالة الذكية بدل rebuild العشوائي
+        processNewMenu(data.menu, newIndex);
         return;
       }
       
@@ -1254,6 +1316,30 @@ function handleMessage(data){
     case 'freecamHint':
       setFreecamHint(data.hint || '');
       break;
+
+    case 'updateFreecamPosition': {
+      // Position the freecam panel anywhere on screen using percentages.
+      // x: 0 = far left, 50 = center, 100 = far right
+      // y: 0 = top, 50 = middle, 100 = bottom
+      const panel = freecamPanel;
+      if(typeof data.x === 'number' || typeof data.x === 'string'){
+        const xv = typeof data.x === 'number' ? data.x : parseFloat(data.x);
+        if(!isNaN(xv)){
+          panel.style.left = Math.max(0, Math.min(100, xv)) + '%';
+          panel.style.right = 'auto';
+        }
+      }
+      if(typeof data.y === 'number' || typeof data.y === 'string'){
+        const yv = typeof data.y === 'number' ? data.y : parseFloat(data.y);
+        if(!isNaN(yv)){
+          panel.style.top = Math.max(0, Math.min(100, yv)) + '%';
+          panel.style.bottom = 'auto';
+        }
+      }
+      // Center the panel on the point we set
+      panel.style.transform = 'translate(-50%, -50%)';
+      break;
+    }
   }
 }
 
