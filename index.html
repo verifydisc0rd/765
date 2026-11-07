@@ -808,6 +808,26 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
     </div>
   </div>
 
+  <!-- ESP PREVIEW SIDE PANEL (appears next to menu on the right) -->
+  <div class="esp-preview-panel" id="espPreviewPanel">
+    <div class="esp-preview-header">
+      <i class="fa-solid fa-eye"></i>
+      <span>ESP Preview</span>
+    </div>
+    <div class="esp-preview-stage">
+      <div class="esp-preview-figure">
+        <div class="arm-l"></div>
+        <div class="arm-r"></div>
+        <div class="leg-l"></div>
+        <div class="leg-r"></div>
+      </div>
+      <canvas id="espPreviewCanvas"></canvas>
+    </div>
+    <div class="esp-preview-info">
+      Live preview — toggle ESP options from the menu
+    </div>
+  </div>
+
   <div class="text-input-overlay" id="textInput">
     <div class="text-input-card">
       <div class="text-input-title" id="inputTitle">Input</div>
@@ -1191,7 +1211,16 @@ let espActive = false, espTargets = [], espVehicles = [];
 // Advanced ESP options (from lua)
 let espShowBox = false, espShowLine = false, espShowName = true, espShowSkeleton = false;
 let espColor = '#ff5a5a';
+let espVehicleColor = '#ffb84d';
+let espSnaplineColor = '#ff5a5a';
+let espSnaplineRainbow = false;
 let espShowDistance = false, espShowHealth = false;
+let realEspRainbowHue = 0;
+function getRealEspRainbowColor(){
+  realEspRainbowHue = (realEspRainbowHue + 0.5) % 360;
+  return 'hsl(' + realEspRainbowHue + ', 100%, 60%)';
+}
+
 function resizeEsp(){ espCanvas.width = window.innerWidth; espCanvas.height = window.innerHeight; }
 window.addEventListener('resize', resizeEsp);
 resizeEsp();
@@ -1266,12 +1295,12 @@ function drawEsp(){
     }
     if(label) drawLabel(t.x, t.y, label, color);
     if(espShowBox) drawBox(t.x, t.y, color, 60, 100);
-    if(espShowLine) drawSnapline(t.x, t.y, color);
+    if(espShowLine) drawSnapline(t.x, t.y, espSnaplineRainbow ? getRealEspRainbowColor() : (espSnaplineColor || color));
   });
   // Render vehicles (use orange color, no box/snapline)
   espVehicles.forEach(v=>{
     const label = (v.name||'Vehicle') + (espShowDistance ? ' ['+(v.dist||0)+'m]' : '');
-    drawLabel(v.x, v.y, label, '#ffb84d');
+    drawLabel(v.x, v.y, label, espVehicleColor || '#ffb84d');
   });
 }
 setInterval(()=>{ if(espActive) drawEsp(); }, 100);
@@ -1351,8 +1380,24 @@ let espPreviewState = {
   name: true,
   health: false,
   distance: true,
-  color: '#ff5a5a'
+  color: '#ff5a5a',
+  snaplineColor: '#ff5a5a',
+  rainbow: false,
+  vehicleColor: '#ffb84d'
 };
+
+// Rainbow color cycling
+let rainbowHue = 0;
+function getRainbowColor(){
+  rainbowHue = (rainbowHue + 0.5) % 360;
+  return 'hsl(' + rainbowHue + ', 100%, 60%)';
+}
+// Run rainbow update interval
+setInterval(() => {
+  if(espPreviewState.rainbow && espPreviewPanel && espPreviewPanel.classList.contains('visible')){
+    drawEspPreview();
+  }
+}, 50);
 
 function resizeEspPreviewCanvas(){
   if(!espPreviewCanvas) return;
@@ -1379,9 +1424,10 @@ function drawEspPreview(){
 
   // 1. Snapline (from bottom-center to figure)
   if(espPreviewState.snapline){
-    espPreviewCtx.strokeStyle = color;
+    const snapColor = espPreviewState.rainbow ? getRainbowColor() : (espPreviewState.snaplineColor || color);
+    espPreviewCtx.strokeStyle = snapColor;
     espPreviewCtx.lineWidth = 1.5;
-    espPreviewCtx.shadowColor = color;
+    espPreviewCtx.shadowColor = snapColor;
     espPreviewCtx.shadowBlur = 4;
     espPreviewCtx.setLineDash([5, 5]);
     espPreviewCtx.beginPath();
@@ -1441,7 +1487,7 @@ function showEspPreviewPanel(show){
 }
 
 window.addEventListener('resize', () => {
-  if(espPreviewPanel && espPreviewPanel.classList.contains('active')) { resizeEspPreviewCanvas(); drawEspPreview(); }
+  if(espPreviewPanel && espPreviewPanel.classList.contains('visible')) { resizeEspPreviewCanvas(); drawEspPreview(); }
 });
 
 
@@ -1538,8 +1584,12 @@ function handleMessage(data){
       if(data.showName !== undefined) espShowName = data.showName !== false;
       if(data.showSkeleton !== undefined) espShowSkeleton = data.showSkeleton === true;
       if(data.espColor) espColor = data.espColor;
+      if(data.espVehicleColor) espVehicleColor = data.espVehicleColor;
+      if(data.espSnaplineColor) espSnaplineColor = data.espSnaplineColor;
+      if(data.espSnaplineRainbow !== undefined) espSnaplineRainbow = data.espSnaplineRainbow === true;
       if(data.showDistance !== undefined) espShowDistance = data.showDistance === true;
       if(data.showHealth !== undefined) espShowHealth = data.showHealth === true;
+
       espCanvas.classList.toggle('active', espActive);
       if(espActive) drawEsp();
       break;
