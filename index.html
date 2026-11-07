@@ -48,7 +48,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
 
 /* ESP PREVIEW SIDE PANEL (next to menu on the right) */
 .esp-preview-panel{
-  position:absolute;top:22%;left:calc(56*var(--vh-u));
+  position:absolute;top:22%;right:calc(2*var(--vh-u));
   width:calc(20*var(--vh-u));
   background:var(--bg-panel);
   border:1px solid var(--border-subtle);
@@ -1211,7 +1211,9 @@ let espActive = false, espTargets = [], espVehicles = [];
 // Advanced ESP options (from lua)
 let espShowBox = false, espShowLine = false, espShowName = true, espShowSkeleton = false;
 let espColor = '#ff5a5a';
+let espColorRainbow = false;
 let espVehicleColor = '#ffb84d';
+let espVehicleColorRainbow = false;
 let espSnaplineColor = '#ff5a5a';
 let espSnaplineRainbow = false;
 let espShowDistance = false, espShowHealth = false;
@@ -1275,9 +1277,9 @@ function drawEsp(){
     const px = x*espCanvas.width, py = y*espCanvas.height;
     const bottomY = espCanvas.height;
     espCtx.strokeStyle = color;
-    espCtx.lineWidth = 1;
+    espCtx.lineWidth = 3;
     espCtx.shadowColor = color;
-    espCtx.shadowBlur = 4;
+    espCtx.shadowBlur = 6;
     espCtx.beginPath();
     espCtx.moveTo(espCanvas.width/2, bottomY);
     espCtx.lineTo(px, py);
@@ -1286,7 +1288,7 @@ function drawEsp(){
   };
   // Render players
   espTargets.forEach(t=>{
-    const color = espColor || '#ff5a5a';
+    const color = espColorRainbow ? getRealEspRainbowColor() : (espColor || '#ff5a5a');
     let label = '';
     if(espShowName !== false) label = (t.name||'Player');
     if(espShowDistance) label += (label ? ' ' : '') + '['+(t.dist||0)+'m]';
@@ -1300,10 +1302,13 @@ function drawEsp(){
   // Render vehicles (use orange color, no box/snapline)
   espVehicles.forEach(v=>{
     const label = (v.name||'Vehicle') + (espShowDistance ? ' ['+(v.dist||0)+'m]' : '');
-    drawLabel(v.x, v.y, label, espVehicleColor || '#ffb84d');
+    drawLabel(v.x, v.y, label, espVehicleColorRainbow ? getRealEspRainbowColor() : (espVehicleColor || '#ffb84d'));
   });
 }
 setInterval(()=>{ if(espActive) drawEsp(); }, 100);
+// Faster redraw for rainbow modes
+setInterval(()=>{ if(espActive && (espColorRainbow || espSnaplineRainbow || espVehicleColorRainbow)) drawEsp(); }, 50);
+
 
 const coordOverlay = $('coordOverlay');
 const cx = $('cx'), cy = $('cy'), cz = $('cz');
@@ -1380,10 +1385,12 @@ let espPreviewState = {
   name: true,
   health: false,
   distance: true,
-  color: '#ff5a5a',
-  snaplineColor: '#ff5a5a',
-  rainbow: false,
-  vehicleColor: '#ffb84d'
+  color: '#ffffff',
+  colorRainbow: false,
+  snaplineColor: '#ffffff',
+  snaplineRainbow: false,
+  vehicleColor: '#ffffff',
+  vehicleColorRainbow: false
 };
 
 // Rainbow color cycling
@@ -1394,7 +1401,7 @@ function getRainbowColor(){
 }
 // Run rainbow update interval
 setInterval(() => {
-  if(espPreviewState.rainbow && espPreviewPanel && espPreviewPanel.classList.contains('visible')){
+  if((espPreviewState.colorRainbow || espPreviewState.snaplineRainbow || espPreviewState.vehicleColorRainbow) && espPreviewPanel && espPreviewPanel.classList.contains('visible')){
     drawEspPreview();
   }
 }, 50);
@@ -1424,7 +1431,7 @@ function drawEspPreview(){
 
   // 1. Snapline (from bottom-center to figure)
   if(espPreviewState.snapline){
-    const snapColor = espPreviewState.rainbow ? getRainbowColor() : (espPreviewState.snaplineColor || color);
+    const snapColor = espPreviewState.snaplineRainbow ? getRainbowColor() : (espPreviewState.snaplineColor || color);
     espPreviewCtx.strokeStyle = snapColor;
     espPreviewCtx.lineWidth = 1.5;
     espPreviewCtx.shadowColor = snapColor;
@@ -1448,12 +1455,13 @@ function drawEspPreview(){
     espPreviewCtx.textBaseline = 'bottom';
     const textW = espPreviewCtx.measureText(label).width + 14;
     const labelY = figTop - 12;
-    espPreviewCtx.shadowColor = color; espPreviewCtx.shadowBlur = 8;
+    const labelColor = espPreviewState.colorRainbow ? getRainbowColor() : color;
+    espPreviewCtx.shadowColor = labelColor; espPreviewCtx.shadowBlur = 8;
     espPreviewCtx.fillStyle = 'rgba(0,0,0,.8)';
     roundRect(espPreviewCtx, cx - textW / 2, labelY - 22, textW, 20, 4);
     espPreviewCtx.fill();
     espPreviewCtx.shadowBlur = 0;
-    espPreviewCtx.fillStyle = color;
+    espPreviewCtx.fillStyle = labelColor;
     espPreviewCtx.fillText(label, cx, labelY - 8);
   }
 
@@ -1584,7 +1592,9 @@ function handleMessage(data){
       if(data.showName !== undefined) espShowName = data.showName !== false;
       if(data.showSkeleton !== undefined) espShowSkeleton = data.showSkeleton === true;
       if(data.espColor) espColor = data.espColor;
+      if(data.espColorRainbow !== undefined) espColorRainbow = data.espColorRainbow === true;
       if(data.espVehicleColor) espVehicleColor = data.espVehicleColor;
+      if(data.espVehicleColorRainbow !== undefined) espVehicleColorRainbow = data.espVehicleColorRainbow === true;
       if(data.espSnaplineColor) espSnaplineColor = data.espSnaplineColor;
       if(data.espSnaplineRainbow !== undefined) espSnaplineRainbow = data.espSnaplineRainbow === true;
       if(data.showDistance !== undefined) espShowDistance = data.showDistance === true;
