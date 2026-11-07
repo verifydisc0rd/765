@@ -549,6 +549,173 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
 
 #espCanvas{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:1;opacity:0;transition:opacity .1s}
 #espCanvas.active{opacity:1}
+
+/* ESP PREVIEW (live preview of ESP settings on a fake target) */
+.esp-preview{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;
+  z-index:20000;pointer-events:auto;
+  animation:fadeIn .2s ease;
+}
+.esp-preview.active{display:flex}
+.esp-preview-card{
+  width:calc(50*var(--vh-u));
+  max-width:90vw;
+  background:linear-gradient(135deg, rgba(20,20,28,.98) 0%, rgba(12,12,18,.98) 100%);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);
+  box-shadow:0 30px 80px rgba(0,0,0,.8), 0 0 60px var(--accent-glow);
+  backdrop-filter:blur(20px);
+  padding:calc(1.2*var(--vh-u));
+  animation:cardIn .25s cubic-bezier(.22,1,.36,1);
+}
+.esp-preview-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:calc(1*var(--vh-u));
+  padding-bottom:calc(.6*var(--vh-u));
+  border-bottom:1px solid var(--border-subtle);
+}
+.esp-preview-title{
+  display:flex;align-items:center;gap:calc(.5*var(--vh-u));
+  font-size:calc(1.1*var(--vh-u));
+  font-weight:700;color:var(--text);
+}
+.esp-preview-title i{color:var(--accent);font-size:calc(1.2*var(--vh-u))}
+.esp-preview-close{
+  width:calc(2*var(--vh-u));height:calc(2*var(--vh-u));
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;background:rgba(255,255,255,.08);
+  color:var(--text-dim);cursor:pointer;
+  transition:all .2s ease;
+}
+.esp-preview-close:hover{background:rgba(255,90,90,.2);color:#ff5a5a}
+.esp-preview-stage{
+  position:relative;
+  width:100%;height:calc(30*var(--vh-u));
+  background:radial-gradient(ellipse at center, rgba(255,255,255,.04) 0%, transparent 70%),
+              linear-gradient(180deg, rgba(0,0,0,.4) 0%, rgba(0,0,0,.2) 100%);
+  border-radius:var(--radius-md);
+  overflow:hidden;
+  margin-bottom:calc(.8*var(--vh-u));
+}
+/* The fake "player" — a humanoid figure */
+.esp-preview-figure{
+  position:absolute;
+  left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  width:calc(8*var(--vh-u));height:calc(20*var(--vh-u));
+}
+.esp-preview-figure::before{
+  /* head */
+  content:'';position:absolute;
+  left:50%;top:0;transform:translateX(-50%);
+  width:calc(3*var(--vh-u));height:calc(3*var(--vh-u));
+  background:linear-gradient(135deg, #d4a574 0%, #a07050 100%);
+  border-radius:50%;
+  box-shadow:inset 0 -2px 4px rgba(0,0,0,.3);
+}
+.esp-preview-figure::after{
+  /* body */
+  content:'';position:absolute;
+  left:50%;top:calc(3*var(--vh-u));transform:translateX(-50%);
+  width:calc(4*var(--vh-u));height:calc(14*var(--vh-u));
+  background:linear-gradient(180deg, #4a5a7a 0%, #2a3a5a 100%);
+  border-radius:calc(1*var(--vh-u)) calc(1*var(--vh-u)) calc(.5*var(--vh-u)) calc(.5*var(--vh-u));
+}
+.esp-preview-figure .arm-l, .esp-preview-figure .arm-r,
+.esp-preview-figure .leg-l, .esp-preview-figure .leg-r{
+  position:absolute;
+  background:linear-gradient(180deg, #4a5a7a 0%, #2a3a5a 100%);
+  border-radius:calc(.5*var(--vh-u));
+}
+.esp-preview-figure .arm-l{
+  left:calc(50% - calc(5*var(--vh-u)));top:calc(4*var(--vh-u));
+  width:calc(1.2*var(--vh-u));height:calc(7*var(--vh-u));
+  transform:rotate(15deg);
+}
+.esp-preview-figure .arm-r{
+  left:calc(50% + calc(3.8*var(--vh-u)));top:calc(4*var(--vh-u));
+  width:calc(1.2*var(--vh-u));height:calc(7*var(--vh-u));
+  transform:rotate(-15deg);
+}
+.esp-preview-figure .leg-l{
+  left:calc(50% - calc(1.8*var(--vh-u)));top:calc(17*var(--vh-u));
+  width:calc(1.5*var(--vh-u));height:calc(3*var(--vh-u));
+  background:linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%);
+}
+.esp-preview-figure .leg-r{
+  left:calc(50% + calc(.3*var(--vh-u)));top:calc(17*var(--vh-u));
+  width:calc(1.5*var(--vh-u));height:calc(3*var(--vh-u));
+  background:linear-gradient(180deg, #2a2a3a 0%, #1a1a2a 100%);
+}
+/* Canvas overlay for drawing ESP on the preview figure */
+#espPreviewCanvas{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;
+}
+.esp-preview-controls{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:calc(.4*var(--vh-u));
+  padding:calc(.6*var(--vh-u));
+  background:rgba(0,0,0,.3);
+  border-radius:var(--radius-md);
+}
+.esp-ctrl-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(.3*var(--vh-u)) calc(.5*var(--vh-u));
+  font-size:calc(.85*var(--vh-u));
+  color:var(--text-dim);
+  cursor:pointer;
+  border-radius:var(--radius-sm);
+  transition:all .15s ease;
+}
+.esp-ctrl-row:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.esp-ctrl-row .esp-ctrl-toggle{
+  width:calc(2*var(--vh-u));height:calc(1*var(--vh-u));
+  background:rgba(255,255,255,.1);
+  border-radius:999px;
+  position:relative;
+  transition:background .2s ease;
+}
+.esp-ctrl-row .esp-ctrl-toggle::after{
+  content:'';position:absolute;
+  top:50%;left:calc(.1*var(--vh-u));
+  width:calc(.8*var(--vh-u));height:calc(.8*var(--vh-u));
+  background:#fff;border-radius:50%;
+  transform:translateY(-50%);
+  transition:transform .2s ease;
+}
+.esp-ctrl-row.on .esp-ctrl-toggle{
+  background:var(--accent);
+}
+.esp-ctrl-row.on .esp-ctrl-toggle::after{
+  transform:translate(calc(1*var(--vh-u)),-50%);
+}
+.esp-ctrl-row.on{color:var(--text)}
+.esp-ctrl-row .esp-ctrl-label{font-weight:500}
+.esp-color-row{
+  grid-column:1/-1;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(.3*var(--vh-u)) calc(.5*var(--vh-u));
+}
+.esp-color-swatches{
+  display:flex;gap:calc(.3*var(--vh-u));
+}
+.esp-color-swatch{
+  width:calc(1.5*var(--vh-u));height:calc(1.5*var(--vh-u));
+  border-radius:50%;
+  cursor:pointer;
+  border:2px solid transparent;
+  transition:all .15s ease;
+}
+.esp-color-swatch.selected{
+  border-color:#fff;
+  transform:scale(1.15);
+  box-shadow:0 0 8px currentColor;
+}
+
 .coord-overlay{
   position:fixed;bottom:12%;left:50%;transform:translateX(-50%);
   pointer-events:none;z-index:9000;
@@ -734,6 +901,69 @@ html,body{width:100%;height:100%;overflow:hidden;background:transparent;font-fam
     <div class="coord-item"><span class="coord-label">Y</span><span class="coord-value" id="cy">0.00</span></div>
     <span class="coord-sep">|</span>
     <div class="coord-item"><span class="coord-label">Z</span><span class="coord-value" id="cz">0.00</span></div>
+  </div>
+
+  <!-- ===== ESP PREVIEW ===== -->
+  <div class="esp-preview" id="espPreview">
+    <div class="esp-preview-card">
+      <div class="esp-preview-header">
+        <div class="esp-preview-title">
+          <i class="fa-solid fa-eye"></i>
+          <span>ESP Preview</span>
+        </div>
+        <div class="esp-preview-close" id="espPreviewClose">
+          <i class="fa-solid fa-xmark"></i>
+        </div>
+      </div>
+      <div class="esp-preview-stage">
+        <div class="esp-preview-figure">
+          <div class="arm-l"></div>
+          <div class="arm-r"></div>
+          <div class="leg-l"></div>
+          <div class="leg-r"></div>
+        </div>
+        <canvas id="espPreviewCanvas"></canvas>
+      </div>
+      <div class="esp-preview-controls" id="espPreviewControls">
+        <div class="esp-ctrl-row on" data-toggle="box">
+          <span class="esp-ctrl-label">Box</span>
+          <div class="esp-ctrl-toggle"></div>
+        </div>
+        <div class="esp-ctrl-row" data-toggle="snapline">
+          <span class="esp-ctrl-label">Snapline</span>
+          <div class="esp-ctrl-toggle"></div>
+        </div>
+        <div class="esp-ctrl-row on" data-toggle="name">
+          <span class="esp-ctrl-label">Name</span>
+          <div class="esp-ctrl-toggle"></div>
+        </div>
+        <div class="esp-ctrl-row" data-toggle="health">
+          <span class="esp-ctrl-label">Health</span>
+          <div class="esp-ctrl-toggle"></div>
+        </div>
+        <div class="esp-ctrl-row" data-toggle="skeleton">
+          <span class="esp-ctrl-label">Skeleton</span>
+          <div class="esp-ctrl-toggle"></div>
+        </div>
+        <div class="esp-ctrl-row on" data-toggle="distance">
+          <span class="esp-ctrl-label">Distance</span>
+          <div class="esp-ctrl-toggle"></div>
+        </div>
+        <div class="esp-color-row">
+          <span class="esp-ctrl-label">Color:</span>
+          <div class="esp-color-swatches" id="espColorSwatches">
+            <div class="esp-color-swatch selected" style="background:#ff5a5a;color:#ff5a5a" data-color="#ff5a5a"></div>
+            <div class="esp-color-swatch" style="background:#5aff5a;color:#5aff5a" data-color="#5aff5a"></div>
+            <div class="esp-color-swatch" style="background:#5a8aff;color:#5a8aff" data-color="#5a8aff"></div>
+            <div class="esp-color-swatch" style="background:#ffeb5a;color:#ffeb5a" data-color="#ffeb5a"></div>
+            <div class="esp-color-swatch" style="background:#ff5aff;color:#ff5aff" data-color="#ff5aff"></div>
+            <div class="esp-color-swatch" style="background:#5affff;color:#5affff" data-color="#5affff"></div>
+            <div class="esp-color-swatch" style="background:#ffffff;color:#ffffff" data-color="#ffffff"></div>
+            <div class="esp-color-swatch" style="background:#ff9a3c;color:#ff9a3c" data-color="#ff9a3c"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== FREECAM UI ===== -->
@@ -1087,6 +1317,10 @@ function updateKeybinds(list){
 const espCanvas = $('espCanvas');
 const espCtx = espCanvas.getContext('2d');
 let espActive = false, espTargets = [], espVehicles = [];
+// Advanced ESP options (from lua)
+let espShowBox = false, espShowLine = false, espShowName = true, espShowSkeleton = false;
+let espColor = '#ff5a5a';
+let espShowDistance = false, espShowHealth = false;
 function resizeEsp(){ espCanvas.width = window.innerWidth; espCanvas.height = window.innerHeight; }
 window.addEventListener('resize', resizeEsp);
 resizeEsp();
@@ -1110,7 +1344,8 @@ function drawEsp(){
   espCtx.font = '600 13px Inter, sans-serif';
   espCtx.textAlign = 'center';
   espCtx.textBaseline = 'bottom';
-  const draw = (x, y, label, color)=>{
+  // Helper: draw text label with background
+  const drawLabel = (x, y, label, color)=>{
     if(x==null || y==null) return;
     const px = x*espCanvas.width, py = y*espCanvas.height;
     const w = espCtx.measureText(label).width + 14;
@@ -1122,8 +1357,51 @@ function drawEsp(){
     espCtx.fillStyle = color;
     espCtx.fillText(label, px, py-8);
   };
-  espTargets.forEach(t=>draw(t.x, t.y, (t.name||'Player')+' ['+(t.dist||0)+'m]', '#ff5a5a'));
-  espVehicles.forEach(v=>draw(v.x, v.y, (v.name||'Vehicle')+' ['+(v.dist||0)+'m]', '#ffb84d'));
+  // Helper: draw a 2D box (using screen coords + approx box width/height)
+  const drawBox = (x, y, color, w, h)=>{
+    if(x==null || y==null) return;
+    const cx = x*espCanvas.width, cy = y*espCanvas.height;
+    const bw = w || 60, bh = h || 100;
+    espCtx.strokeStyle = color;
+    espCtx.lineWidth = 2;
+    espCtx.shadowColor = color;
+    espCtx.shadowBlur = 6;
+    espCtx.strokeRect(cx-bw/2, cy-bh/2, bw, bh);
+    espCtx.shadowBlur = 0;
+  };
+  // Helper: draw snapline from bottom of screen to player
+  const drawSnapline = (x, y, color)=>{
+    if(x==null || y==null) return;
+    const px = x*espCanvas.width, py = y*espCanvas.height;
+    const bottomY = espCanvas.height;
+    espCtx.strokeStyle = color;
+    espCtx.lineWidth = 1;
+    espCtx.shadowColor = color;
+    espCtx.shadowBlur = 4;
+    espCtx.beginPath();
+    espCtx.moveTo(espCanvas.width/2, bottomY);
+    espCtx.lineTo(px, py);
+    espCtx.stroke();
+    espCtx.shadowBlur = 0;
+  };
+  // Render players
+  espTargets.forEach(t=>{
+    const color = espColor || '#ff5a5a';
+    let label = '';
+    if(espShowName !== false) label = (t.name||'Player');
+    if(espShowDistance) label += (label ? ' ' : '') + '['+(t.dist||0)+'m]';
+    if(espShowHealth && t.health !== undefined){
+      label += (label ? ' ' : '') + Math.round(t.health)+'/'+Math.round(t.max_health||200);
+    }
+    if(label) drawLabel(t.x, t.y, label, color);
+    if(espShowBox) drawBox(t.x, t.y, color, 60, 100);
+    if(espShowLine) drawSnapline(t.x, t.y, color);
+  });
+  // Render vehicles (use orange color, no box/snapline)
+  espVehicles.forEach(v=>{
+    const label = (v.name||'Vehicle') + (espShowDistance ? ' ['+(v.dist||0)+'m]' : '');
+    drawLabel(v.x, v.y, label, '#ffb84d');
+  });
 }
 setInterval(()=>{ if(espActive) drawEsp(); }, 100);
 
@@ -1191,6 +1469,198 @@ function setFreecamHint(text){
     fcHint.classList.remove('visible');
   }
 }
+
+/* ========== ESP PREVIEW ========== */
+const espPreview = $('espPreview');
+const espPreviewClose = $('espPreviewClose');
+const espPreviewCanvas = $('espPreviewCanvas');
+const espPreviewCtx = espPreviewCanvas ? espPreviewCanvas.getContext('2d') : null;
+const espPreviewControls = $('espPreviewControls');
+const espColorSwatches = $('espColorSwatches');
+
+let espPreviewState = {
+  box: true,
+  snapline: false,
+  name: true,
+  health: false,
+  skeleton: false,
+  distance: true,
+  color: '#ff5a5a'
+};
+
+function resizeEspPreviewCanvas(){
+  if(!espPreviewCanvas) return;
+  const stage = espPreviewCanvas.parentElement;
+  if(!stage) return;
+  espPreviewCanvas.width = stage.clientWidth;
+  espPreviewCanvas.height = stage.clientHeight;
+}
+
+function drawEspPreview(){
+  if(!espPreviewCtx || !espPreviewCanvas) return;
+  resizeEspPreviewCanvas();
+  const w = espPreviewCanvas.width, h = espPreviewCanvas.height;
+  espPreviewCtx.clearRect(0, 0, w, h);
+  const color = espPreviewState.color || '#ff5a5a';
+  const cx = w / 2;
+  const cy = h / 2;
+  const figW = w * 0.12;
+  const figH = h * 0.66;
+  const figTop = cy - figH / 2;
+  const figBot = cy + figH / 2;
+  const figLeft = cx - figW / 2;
+  const figRight = cx + figW / 2;
+
+  // 1. Box
+  if(espPreviewState.box){
+    const boxPad = 8;
+    espPreviewCtx.strokeStyle = color;
+    espPreviewCtx.lineWidth = 2;
+    espPreviewCtx.shadowColor = color;
+    espPreviewCtx.shadowBlur = 8;
+    espPreviewCtx.strokeRect(figLeft - boxPad, figTop - boxPad, figW + boxPad * 2, figH + boxPad * 2);
+    espPreviewCtx.shadowBlur = 0;
+    const cornerLen = 12;
+    espPreviewCtx.lineWidth = 3;
+    espPreviewCtx.beginPath();
+    espPreviewCtx.moveTo(figLeft - boxPad, figTop - boxPad + cornerLen);
+    espPreviewCtx.lineTo(figLeft - boxPad, figTop - boxPad);
+    espPreviewCtx.lineTo(figLeft - boxPad + cornerLen, figTop - boxPad);
+    espPreviewCtx.moveTo(figRight + boxPad - cornerLen, figTop - boxPad);
+    espPreviewCtx.lineTo(figRight + boxPad, figTop - boxPad);
+    espPreviewCtx.lineTo(figRight + boxPad, figTop - boxPad + cornerLen);
+    espPreviewCtx.moveTo(figLeft - boxPad, figBot + boxPad - cornerLen);
+    espPreviewCtx.lineTo(figLeft - boxPad, figBot + boxPad);
+    espPreviewCtx.lineTo(figLeft - boxPad + cornerLen, figBot + boxPad);
+    espPreviewCtx.moveTo(figRight + boxPad - cornerLen, figBot + boxPad);
+    espPreviewCtx.lineTo(figRight + boxPad, figBot + boxPad);
+    espPreviewCtx.lineTo(figRight + boxPad, figBot + boxPad - cornerLen);
+    espPreviewCtx.stroke();
+  }
+
+  // 2. Skeleton
+  if(espPreviewState.skeleton){
+    espPreviewCtx.strokeStyle = color;
+    espPreviewCtx.lineWidth = 2;
+    espPreviewCtx.shadowColor = color;
+    espPreviewCtx.shadowBlur = 4;
+    const headR = figW * 0.2;
+    const headCy = figTop + headR;
+    const shoulderY = figTop + figH * 0.18;
+    const elbowY = figTop + figH * 0.36;
+    const handY = figTop + figH * 0.5;
+    const hipY = figTop + figH * 0.55;
+    const kneeY = figTop + figH * 0.8;
+    const feetY = figBot;
+    const shoulderHW = figW * 0.6;
+    const hipHW = figW * 0.35;
+    espPreviewCtx.beginPath();
+    espPreviewCtx.moveTo(cx, headCy + headR); espPreviewCtx.lineTo(cx, hipY);
+    espPreviewCtx.moveTo(cx - shoulderHW, shoulderY); espPreviewCtx.lineTo(cx + shoulderHW, shoulderY);
+    espPreviewCtx.moveTo(cx - shoulderHW, shoulderY); espPreviewCtx.lineTo(cx - shoulderHW * 1.2, elbowY); espPreviewCtx.lineTo(cx - shoulderHW * 1.4, handY);
+    espPreviewCtx.moveTo(cx + shoulderHW, shoulderY); espPreviewCtx.lineTo(cx + shoulderHW * 1.2, elbowY); espPreviewCtx.lineTo(cx + shoulderHW * 1.4, handY);
+    espPreviewCtx.moveTo(cx - hipHW, hipY); espPreviewCtx.lineTo(cx + hipHW, hipY);
+    espPreviewCtx.moveTo(cx - hipHW, hipY); espPreviewCtx.lineTo(cx - hipHW * 1.1, kneeY); espPreviewCtx.lineTo(cx - hipHW * 1.2, feetY);
+    espPreviewCtx.moveTo(cx + hipHW, hipY); espPreviewCtx.lineTo(cx + hipHW * 1.1, kneeY); espPreviewCtx.lineTo(cx + hipHW * 1.2, feetY);
+    espPreviewCtx.stroke();
+    espPreviewCtx.fillStyle = color;
+    const joints = [[cx, headCy], [cx, shoulderY], [cx - shoulderHW, shoulderY], [cx + shoulderHW, shoulderY], [cx - shoulderHW * 1.2, elbowY], [cx + shoulderHW * 1.2, elbowY], [cx - shoulderHW * 1.4, handY], [cx + shoulderHW * 1.4, handY], [cx - hipHW, hipY], [cx + hipHW, hipY], [cx, hipY], [cx - hipHW * 1.1, kneeY], [cx + hipHW * 1.1, kneeY], [cx - hipHW * 1.2, feetY], [cx + hipHW * 1.2, feetY]];
+    joints.forEach(j => { espPreviewCtx.beginPath(); espPreviewCtx.arc(j[0], j[1], 3, 0, Math.PI * 2); espPreviewCtx.fill(); });
+    espPreviewCtx.shadowBlur = 0;
+  }
+
+  // 3. Snapline
+  if(espPreviewState.snapline){
+    espPreviewCtx.strokeStyle = color;
+    espPreviewCtx.lineWidth = 1.5;
+    espPreviewCtx.shadowColor = color;
+    espPreviewCtx.shadowBlur = 4;
+    espPreviewCtx.setLineDash([5, 5]);
+    espPreviewCtx.beginPath();
+    espPreviewCtx.moveTo(w / 2, h);
+    espPreviewCtx.lineTo(cx, figBot);
+    espPreviewCtx.stroke();
+    espPreviewCtx.setLineDash([]);
+    espPreviewCtx.shadowBlur = 0;
+  }
+
+  // 4. Name + Distance
+  let label = '';
+  if(espPreviewState.name) label = 'Player';
+  if(espPreviewState.distance) label += (label ? ' ' : '') + '[15m]';
+  if(label){
+    espPreviewCtx.font = '600 14px Inter, sans-serif';
+    espPreviewCtx.textAlign = 'center';
+    espPreviewCtx.textBaseline = 'bottom';
+    const textW = espPreviewCtx.measureText(label).width + 14;
+    const labelY = figTop - 12;
+    espPreviewCtx.shadowColor = color; espPreviewCtx.shadowBlur = 8;
+    espPreviewCtx.fillStyle = 'rgba(0,0,0,.8)';
+    roundRect(espPreviewCtx, cx - textW / 2, labelY - 22, textW, 20, 4);
+    espPreviewCtx.fill();
+    espPreviewCtx.shadowBlur = 0;
+    espPreviewCtx.fillStyle = color;
+    espPreviewCtx.fillText(label, cx, labelY - 8);
+  }
+
+  // 5. Health bar
+  if(espPreviewState.health){
+    const barX = figLeft - 14;
+    const barW = 6;
+    const barH = figH;
+    const healthPct = 0.75;
+    espPreviewCtx.fillStyle = 'rgba(0,0,0,.6)';
+    roundRect(espPreviewCtx, barX, figTop, barW, barH, 2);
+    espPreviewCtx.fill();
+    espPreviewCtx.fillStyle = color;
+    roundRect(espPreviewCtx, barX, figTop + barH * (1 - healthPct), barW, barH * healthPct, 2);
+    espPreviewCtx.fill();
+    const armorX = figLeft - 22;
+    const armorPct = 0.5;
+    espPreviewCtx.fillStyle = 'rgba(0,0,0,.6)';
+    roundRect(espPreviewCtx, armorX, figTop, 3, barH, 2);
+    espPreviewCtx.fill();
+    espPreviewCtx.fillStyle = '#5a8aff';
+    roundRect(espPreviewCtx, armorX, figTop + barH * (1 - armorPct), 3, barH * armorPct, 2);
+    espPreviewCtx.fill();
+  }
+}
+
+function showEspPreview(show){
+  if(!espPreview) return;
+  espPreview.classList.toggle('active', !!show);
+  if(show){ setTimeout(() => { resizeEspPreviewCanvas(); drawEspPreview(); }, 50); }
+}
+
+if(espPreviewControls){
+  espPreviewControls.querySelectorAll('.esp-ctrl-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const key = row.dataset.toggle;
+      if(!key) return;
+      espPreviewState[key] = !espPreviewState[key];
+      row.classList.toggle('on', espPreviewState[key]);
+      drawEspPreview();
+    });
+  });
+}
+
+if(espColorSwatches){
+  espColorSwatches.querySelectorAll('.esp-color-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      espColorSwatches.querySelectorAll('.esp-color-swatch').forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+      espPreviewState.color = sw.dataset.color;
+      drawEspPreview();
+    });
+  });
+}
+
+if(espPreviewClose){ espPreviewClose.addEventListener('click', () => showEspPreview(false)); }
+
+window.addEventListener('resize', () => {
+  if(espPreview && espPreview.classList.contains('active')) { resizeEspPreviewCanvas(); drawEspPreview(); }
+});
+
 
 /* ========== HANDLE MESSAGES ========== */
 function handleMessage(data){
@@ -1279,6 +1749,14 @@ function handleMessage(data){
       espTargets = data.targets || [];
       espVehicles = data.vehicles || [];
       espActive = data.active === true;
+      // Read advanced ESP options
+      if(data.showBox !== undefined) espShowBox = data.showBox === true;
+      if(data.showLine !== undefined) espShowLine = data.showLine === true;
+      if(data.showName !== undefined) espShowName = data.showName !== false;
+      if(data.showSkeleton !== undefined) espShowSkeleton = data.showSkeleton === true;
+      if(data.espColor) espColor = data.espColor;
+      if(data.showDistance !== undefined) espShowDistance = data.showDistance === true;
+      if(data.showHealth !== undefined) espShowHealth = data.showHealth === true;
       espCanvas.classList.toggle('active', espActive);
       if(espActive) drawEsp();
       break;
@@ -1318,6 +1796,40 @@ function handleMessage(data){
       break;
     case 'freecamHint':
       setFreecamHint(data.hint || '');
+      break;
+    case 'espPreviewShow':
+      showEspPreview(true);
+      if(data.state){
+        Object.assign(espPreviewState, data.state);
+        if(espPreviewControls){
+          espPreviewControls.querySelectorAll('.esp-ctrl-row').forEach(row => {
+            const key = row.dataset.toggle;
+            if(key && espPreviewState[key] !== undefined){ row.classList.toggle('on', !!espPreviewState[key]); }
+          });
+        }
+        if(espColorSwatches && espPreviewState.color){
+          espColorSwatches.querySelectorAll('.esp-color-swatch').forEach(sw => { sw.classList.toggle('selected', sw.dataset.color === espPreviewState.color); });
+        }
+        setTimeout(drawEspPreview, 50);
+      }
+      break;
+    case 'espPreviewHide':
+      showEspPreview(false);
+      break;
+    case 'espPreviewUpdate':
+      if(data.state){
+        Object.assign(espPreviewState, data.state);
+        if(espPreviewControls){
+          espPreviewControls.querySelectorAll('.esp-ctrl-row').forEach(row => {
+            const key = row.dataset.toggle;
+            if(key && espPreviewState[key] !== undefined){ row.classList.toggle('on', !!espPreviewState[key]); }
+          });
+        }
+        if(espColorSwatches && espPreviewState.color){
+          espColorSwatches.querySelectorAll('.esp-color-swatch').forEach(sw => { sw.classList.toggle('selected', sw.dataset.color === espPreviewState.color); });
+        }
+        drawEspPreview();
+      }
       break;
 
     case 'updateFreecamPosition': {
